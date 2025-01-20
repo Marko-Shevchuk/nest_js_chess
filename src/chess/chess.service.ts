@@ -25,7 +25,11 @@ export class ChessService {
     this.moveHistory = [];
   }
 
-  async makeMove(from: string, to: string): Promise<string> {
+  async makeMove(
+    from: string,
+    to: string,
+    author: string = '',
+  ): Promise<string> {
     const fromPos = this.convertToIndices(from);
     const toPos = this.convertToIndices(to);
 
@@ -47,11 +51,15 @@ export class ChessService {
       return 'Invalid move.';
     }
 
-    const move = `${piece.color === 'w' ? 'White' : 'Black'}: ${from} -> ${to}`;
+    const move = `${piece.color === 'w' ? 'White' : 'Black'}: ${from} -> ${to}${author ? ` by ${author}` : ''}`;
     this.moveHistory.push(move);
 
     const targetSquare = this.board[toPos.row][toPos.col];
-    if (targetSquare && targetSquare.type === 'k' && targetSquare.color !== piece.color) {
+    if (
+      targetSquare &&
+      targetSquare.type === 'k' &&
+      targetSquare.color !== piece.color
+    ) {
       const winner = piece.color === 'w' ? 'White' : 'Black';
 
       await this.databaseService.saveGame(winner, this.moveHistory);
@@ -60,7 +68,7 @@ export class ChessService {
       return `${winner} wins by capturing the king! The game has been reset.`;
     }
 
-    // Move
+    // Move the piece
     this.board[toPos.row][toPos.col] = { ...piece };
     this.board[fromPos.row][fromPos.col] = null;
 
@@ -69,14 +77,14 @@ export class ChessService {
 
     return `Move made: ${from} -> ${to}`;
   }
-
-
   getBoard(): Board {
     return this.board;
   }
-
-
-  private isValidMove(from: { row: number; col: number }, to: { row: number; col: number }, piece: Piece): boolean {
+  private isValidMove(
+    from: { row: number; col: number },
+    to: { row: number; col: number },
+    piece: Piece,
+  ): boolean {
     const targetSquare = this.board[to.row][to.col];
     if (targetSquare && targetSquare.color === piece.color) {
       return false;
@@ -99,7 +107,10 @@ export class ChessService {
         return false;
     }
   }
-  private isValidRookMove(from: { row: number; col: number }, to: { row: number; col: number }): boolean {
+  private isValidRookMove(
+    from: { row: number; col: number },
+    to: { row: number; col: number },
+  ): boolean {
     if (from.row !== to.row && from.col !== to.col) {
       return false;
     }
@@ -107,13 +118,19 @@ export class ChessService {
     return this.isPathClear(from, to);
   }
 
-  private isValidKnightMove(from: { row: number; col: number }, to: { row: number; col: number }): boolean {
+  private isValidKnightMove(
+    from: { row: number; col: number },
+    to: { row: number; col: number },
+  ): boolean {
     const rowDiff = Math.abs(to.row - from.row);
     const colDiff = Math.abs(to.col - from.col);
     return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
   }
 
-  private isValidBishopMove(from: { row: number; col: number }, to: { row: number; col: number }): boolean {
+  private isValidBishopMove(
+    from: { row: number; col: number },
+    to: { row: number; col: number },
+  ): boolean {
     if (Math.abs(to.row - from.row) !== Math.abs(to.col - from.col)) {
       return false;
     }
@@ -121,11 +138,17 @@ export class ChessService {
     return this.isPathClear(from, to);
   }
 
-  private isValidQueenMove(from: { row: number; col: number }, to: { row: number; col: number }): boolean {
+  private isValidQueenMove(
+    from: { row: number; col: number },
+    to: { row: number; col: number },
+  ): boolean {
     return this.isValidRookMove(from, to) || this.isValidBishopMove(from, to);
   }
 
-  private isValidKingMove(from: { row: number; col: number }, to: { row: number; col: number }): boolean {
+  private isValidKingMove(
+    from: { row: number; col: number },
+    to: { row: number; col: number },
+  ): boolean {
     const rowDiff = Math.abs(to.row - from.row);
     const colDiff = Math.abs(to.col - from.col);
 
@@ -136,9 +159,11 @@ export class ChessService {
     // TODO: Add castling logic here in the future
     return false;
   }
-
-
-  private isValidPawnMove(from: { row: number; col: number }, to: { row: number; col: number }, piece: Piece): boolean {
+  private isValidPawnMove(
+    from: { row: number; col: number },
+    to: { row: number; col: number },
+    piece: Piece,
+  ): boolean {
     const direction = piece.color === 'w' ? -1 : 1;
     const startRow = piece.color === 'w' ? 6 : 1;
 
@@ -164,12 +189,13 @@ export class ChessService {
     ) {
       return true;
     }
-
-
     return false;
   }
 
-  private isPathClear(from: { row: number; col: number }, to: { row: number; col: number }): boolean {
+  private isPathClear(
+    from: { row: number; col: number },
+    to: { row: number; col: number },
+  ): boolean {
     const rowStep = Math.sign(to.row - from.row);
     const colStep = Math.sign(to.col - from.col);
     let currentRow = from.row + rowStep;
@@ -186,7 +212,9 @@ export class ChessService {
     return true;
   }
 
-  private convertToIndices(square: string): { row: number; col: number } | null {
+  private convertToIndices(
+    square: string,
+  ): { row: number; col: number } | null {
     if (!/^[a-h][1-8]$/.test(square)) {
       return null;
     }
@@ -196,8 +224,7 @@ export class ChessService {
   }
 
   private initializeBoard(): Board {
-    const emptyRow: Square[] = Array(8).fill(null);
-
+    Array(8).fill(null);
     return [
       // Black pieces
       [
@@ -225,5 +252,4 @@ export class ChessService {
       ],
     ];
   }
-
 }

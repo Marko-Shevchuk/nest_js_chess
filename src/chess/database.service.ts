@@ -17,35 +17,56 @@ export class DatabaseService {
   }
 
   private initializeSchema(): void {
-    const createTableQuery = `
-        CREATE TABLE IF NOT EXISTS games (
-                                             id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                             winner TEXT NOT NULL,
-                                             history TEXT NOT NULL,
-                                             date TEXT NOT NULL
-        )
+    const dropGamesTableQuery = `DROP TABLE IF EXISTS games`;
+    const dropUsersTableQuery = `DROP TABLE IF EXISTS users`;
+
+    const createGamesTableQuery = `
+      CREATE TABLE games (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        winner TEXT NOT NULL,
+        history TEXT NOT NULL,
+        date TEXT NOT NULL
+      )
     `;
-    this.db.run(createTableQuery, (err) => {
-      if (err) {
-        console.error('Failed to initialize database schema:', err.message);
-      }
+    const createUserTableQuery = `
+      CREATE TABLE users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL
+      )
+    `;
+
+    this.db.serialize(() => {
+      this.db.run(dropGamesTableQuery);
+      this.db.run(dropUsersTableQuery);
+      this.db.run(createGamesTableQuery);
+      this.db.run(createUserTableQuery, (err) => {
+        if (err) {
+          console.error('Failed to create users table:', err.message);
+        } else {
+          console.log('Users table initialized.');
+        }
+      });
     });
   }
-
   saveGame(winner: string, history: string[]): Promise<void> {
     return new Promise((resolve, reject) => {
       const query = `
           INSERT INTO games (winner, history, date)
           VALUES (?, ?, ?)
       `;
-      this.db.run(query, [winner, JSON.stringify(history), new Date().toISOString()], (err) => {
-        if (err) {
-          console.error('Failed to save game:', err.message);
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
+      this.db.run(
+        query,
+        [winner, JSON.stringify(history), new Date().toISOString()],
+        (err) => {
+          if (err) {
+            console.error('Failed to save game:', err.message);
+            reject(err);
+          } else {
+            resolve();
+          }
+        },
+      );
     });
   }
 
@@ -57,14 +78,39 @@ export class DatabaseService {
           console.error('Failed to fetch game history:', err.message);
           reject(err);
         } else if (row) {
+          const game = row as { id: number; winner: string; history: string; date: string }; // Explicitly cast row
           resolve({
-            id: row.id,
-            winner: row.winner,
-            history: JSON.parse(row.history),
-            date: row.date,
+            id: game.id,
+            winner: game.winner,
+            history: JSON.parse(game.history),
+            date: game.date,
           });
         } else {
           reject(new Error('Game not found.'));
+        }
+      });
+    });
+  }
+
+  run(query: string, params: any[] = []): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.db.run(query, params, (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
+
+  get<T>(query: string, params: any[] = []): Promise<T | undefined> {
+    return new Promise((resolve, reject) => {
+      this.db.get(query, params, (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(row as T);
         }
       });
     });

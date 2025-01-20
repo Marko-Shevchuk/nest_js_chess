@@ -1,10 +1,23 @@
-import { Controller, Get, Post, Body, Param, ParseIntPipe } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  NotFoundException,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { ChessService, Board } from './chess.service';
 import { DatabaseService } from './database.service';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('chess')
 export class ChessController {
-  constructor(private readonly chessService: ChessService, private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly chessService: ChessService,
+    private readonly databaseService: DatabaseService,
+  ) {}
 
   @Get('board')
   getBoard(): Board {
@@ -12,34 +25,28 @@ export class ChessController {
   }
 
   @Post('move')
-  async makeMove(@Body() body: { from: string; to: string }): Promise<string> {
+  @UseGuards(AuthGuard)
+  async makeMove(@Body() body: { from: string; to: string }, @Req() req): Promise<string> {
     const { from, to } = body;
-    return this.chessService.makeMove(from, to);
+    const author = req.user?.username || '';
+    return this.chessService.makeMove(from, to, author);
   }
 
   @Post('reset')
+  @UseGuards(AuthGuard)
   resetGame() {
     this.chessService.resetGame();
     return { message: 'Game has been reset.' };
   }
-  @Get('game/:id')
-  async getGameHistory(@Param('id', ParseIntPipe) gameId: number) {
-    try {
-      const game = await this.databaseService.getGameHistory(gameId);
-      return {
-        success: true,
-        game: {
-          id: game.id,
-          winner: game.winner,
-          history: game.history,
-          date: game.date,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
+
+  @Get('game-history/:id')
+  async getGameHistory(@Param('id') gameId: string) {
+    const game = await this.databaseService.getGameHistory(
+      parseInt(gameId, 10),
+    );
+    if (!game) {
+      throw new NotFoundException('Game not found');
     }
+    return game;
   }
 }

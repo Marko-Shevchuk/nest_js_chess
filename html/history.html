@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Funky Chess Game History</title>
+  <style>
+      body {
+          font-family: Arial, sans-serif;
+          margin: 20px;
+          padding: 0;
+      }
+      .container {
+          max-width: 800px;
+          margin: 0 auto;
+      }
+      h1 {
+          text-align: center;
+      }
+      ul {
+          list-style-type: none;
+          padding: 0;
+      }
+      li {
+          margin: 5px 0;
+          padding: 10px;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+          background-color: #f9f9f9;
+      }
+      .error {
+          color: red;
+          text-align: center;
+      }
+      .board-container {
+          display: flex;
+          justify-content: center;
+          margin: 20px 0;
+      }
+      .board {
+          display: grid;
+          grid-template-columns: repeat(8, 50px);
+          grid-template-rows: repeat(8, 50px);
+          border: 2px solid #000;
+          gap: 1px;
+      }
+      .square {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-size: 24px;
+          width: 50px;
+          height: 50px;
+          box-sizing: border-box;
+      }
+      .white-square {
+          background-color: #f0d9b5;
+      }
+      .black-square {
+          background-color: #b58863;
+      }
+      .controls {
+          text-align: center;
+          margin: 10px 0;
+      }
+      button {
+          margin: 5px;
+          padding: 10px 15px;
+          font-size: 16px;
+      }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Chess Game History</h1>
+  <div class="board-container">
+    <div id="board" class="board"></div>
+  </div>
+  <div class="controls">
+    <button id="prev-move">Previous</button>
+    <span id="move-index">Move: 0</span>
+    <button id="next-move">Next</button>
+  </div>
+  <ul id="game-history"></ul>
+  <p id="error-message" class="error" style="display: none;">Game history could not be loaded. Try again later or make sure it exists.</p>
+</div>
+
+<script>
+  const pieceSymbols = {
+    p: '♟',
+    r: '♜',
+    n: '♞',
+    b: '♝',
+    q: '♛',
+    k: '♚',
+  };
+
+  let currentMoveIndex = 0;
+  let moves = [];
+  let boardStates = [];
+
+  async function fetchGameHistory() {
+    const pathParts = window.location.pathname.split('/');
+    const gameId = pathParts[pathParts.length - 1];
+
+    if (!gameId) {
+      document.getElementById('error-message').textContent = 'No game ID provided in the URL.';
+      document.getElementById('error-message').style.display = 'block';
+      return;
+    }
+
+    try {
+      const response = await fetch(`/chess/game-history/${gameId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+
+      const game = await response.json();
+      moves = game.history;
+      generateInitialBoard();
+      processMoves();
+      renderBoard();
+      renderHistory(game);
+    } catch (error) {
+      console.error('Failed to fetch game history:', error);
+      document.getElementById('error-message').textContent = 'Game history could not be loaded. Please try again later.';
+      document.getElementById('error-message').style.display = 'block';
+    }
+  }
+
+  function generateInitialBoard() {
+    boardStates = [
+      [
+        [{ type: 'r', color: 'b' }, { type: 'n', color: 'b' }, { type: 'b', color: 'b' }, { type: 'q', color: 'b' }, { type: 'k', color: 'b' }, { type: 'b', color: 'b' }, { type: 'n', color: 'b' }, { type: 'r', color: 'b' }],
+        Array(8).fill({ type: 'p', color: 'b' }),
+        ...Array(4).fill(Array(8).fill(null)),
+        Array(8).fill({ type: 'p', color: 'w' }),
+        [{ type: 'r', color: 'w' }, { type: 'n', color: 'w' }, { type: 'b', color: 'w' }, { type: 'q', color: 'w' }, { type: 'k', color: 'w' }, { type: 'b', color: 'w' }, { type: 'n', color: 'w' }, { type: 'r', color: 'w' }]
+      ]
+    ];
+  }
+
+  function processMoves() {
+    const startingBoard = boardStates[0];
+    for (const move of moves) {
+      const lastBoard = boardStates[boardStates.length - 1];
+      const newBoard = JSON.parse(JSON.stringify(lastBoard));
+      const [colorAction, author] = move.split(' by ');
+      const [color, action] = colorAction.split(': ');
+      const [from, to] = action.split(' -> ');
+
+      const fromPos = convertToIndices(from);
+      const toPos = convertToIndices(to);
+
+      if (fromPos && toPos) {
+        const piece = newBoard[fromPos.row][fromPos.col];
+        newBoard[toPos.row][toPos.col] = piece;
+        newBoard[fromPos.row][fromPos.col] = null;
+      }
+
+      boardStates.push(newBoard);
+    }
+  }
+
+  function convertToIndices(square) {
+    if (!/^[a-h][1-8]$/.test(square)) {
+      return null;
+    }
+    const col = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const row = 8 - parseInt(square[1], 10);
+    return { row, col };
+  }
+
+  function renderBoard() {
+    const boardElement = document.getElementById('board');
+    boardElement.innerHTML = '';
+
+    const board = boardStates[currentMoveIndex];
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const square = board[row][col];
+        const squareElement = document.createElement('div');
+        squareElement.className = `square ${(row + col) % 2 === 0 ? 'white-square' : 'black-square'}`;
+
+        if (square) {
+          squareElement.textContent = square.color === 'w'
+            ? pieceSymbols[square.type].toUpperCase()
+            : pieceSymbols[square.type];
+          squareElement.style.color = square.color === 'w' ? 'white' : 'black';
+        }
+
+        boardElement.appendChild(squareElement);
+      }
+    }
+    document.getElementById('move-index').textContent = `Move: ${currentMoveIndex}`;
+  }
+
+  function renderHistory(game) {
+    const gameHistoryList = document.getElementById('game-history');
+    gameHistoryList.innerHTML = `<li><strong>Winner:</strong> ${game.winner}</li>`;
+    moves.forEach((move, index) => {
+      const listItem = document.createElement('li');
+      const [colorAction, author] = move.split(' by ');
+      listItem.textContent = `Move ${index + 1}: ${colorAction}` + (author ? ` by ${author}` : '');
+      gameHistoryList.appendChild(listItem);
+    });
+  }
+
+  document.getElementById('prev-move').addEventListener('click', () => {
+    if (currentMoveIndex > 0) {
+      currentMoveIndex--;
+      renderBoard();
+    }
+  });
+
+  document.getElementById('next-move').addEventListener('click', () => {
+    if (currentMoveIndex < boardStates.length - 1) {
+      currentMoveIndex++;
+      renderBoard();
+    }
+  });
+
+  fetchGameHistory();
+</script>
+
+</body>
+</html>
