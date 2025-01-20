@@ -44,9 +44,8 @@ describe('AppController', () => {
 
   describe('serveHistoryWithId', () => {
     it('should serve the history.html file when given an id', () => {
-      const id = '123';
       const filePath = join(__dirname, '..', 'html', 'history.html');
-      appController.serveHistoryWithId(res, id);
+      appController.serveHistoryWithId(res);
       expect(res.sendFile).toHaveBeenCalledWith(filePath);
     });
   });
