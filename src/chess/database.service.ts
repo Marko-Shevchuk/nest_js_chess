@@ -70,7 +70,9 @@ export class DatabaseService {
     });
   }
 
-  getGameHistory(gameId: number): Promise<{ id: number; winner: string; history: string[]; date: string }> {
+  getGameHistory(
+    gameId: number,
+  ): Promise<{ id: number; winner: string; history: string[]; date: string }> {
     return new Promise((resolve, reject) => {
       const query = `SELECT * FROM games WHERE id = ?`;
       this.db.get(query, [gameId], (err, row) => {
@@ -78,7 +80,12 @@ export class DatabaseService {
           console.error('Failed to fetch game history:', err.message);
           reject(err);
         } else if (row) {
-          const game = row as { id: number; winner: string; history: string; date: string }; // Explicitly cast row
+          const game = row as {
+            id: number;
+            winner: string;
+            history: string;
+            date: string;
+          };
           resolve({
             id: game.id,
             winner: game.winner,

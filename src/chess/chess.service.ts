@@ -167,7 +167,11 @@ export class ChessService {
     const direction = piece.color === 'w' ? -1 : 1;
     const startRow = piece.color === 'w' ? 6 : 1;
 
-    if (to.row === from.row + direction && to.col === from.col && !this.board[to.row][to.col]) {
+    if (
+      to.row === from.row + direction &&
+      to.col === from.col &&
+      !this.board[to.row][to.col]
+    ) {
       return true;
     }
 
@@ -237,9 +241,15 @@ export class ChessService {
         { type: 'n', color: 'b' },
         { type: 'r', color: 'b' },
       ],
-      Array(8).fill(null).map(() => ({ type: 'p', color: 'b' })), // Black pawns
-      ...Array(4).fill(null).map(() => Array(8).fill(null)),       // Empty rows
-      Array(8).fill(null).map(() => ({ type: 'p', color: 'w' })), // White pawns
+      Array(8)
+        .fill(null)
+        .map(() => ({ type: 'p', color: 'b' })), // Black pawns
+      ...Array(4)
+        .fill(null)
+        .map(() => Array(8).fill(null)), // Empty rows
+      Array(8)
+        .fill(null)
+        .map(() => ({ type: 'p', color: 'w' })), // White pawns
       [
         { type: 'r', color: 'w' },
         { type: 'n', color: 'w' },

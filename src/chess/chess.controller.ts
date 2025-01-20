@@ -26,7 +26,10 @@ export class ChessController {
 
   @Post('move')
   @UseGuards(AuthGuard)
-  async makeMove(@Body() body: { from: string; to: string }, @Req() req): Promise<string> {
+  async makeMove(
+    @Body() body: { from: string; to: string },
+    @Req() req,
+  ): Promise<string> {
     const { from, to } = body;
     const author = req.user?.username || '';
     return this.chessService.makeMove(from, to, author);

@@ -12,8 +12,7 @@ describe('AuthController', () => {
   let jwtServiceMock: jest.Mocked<JwtService>;
 
   beforeEach(async () => {
-    databaseServiceMock = {
-    } as any;
+    databaseServiceMock = {} as any;
 
     jwtServiceMock = {
       sign: jest.fn().mockReturnValue('mock-jwt-token'),
@@ -49,17 +48,23 @@ describe('AuthController', () => {
 
   describe('register', () => {
     it('should throw BadRequestException if username or password is missing', async () => {
-      await expect(controller.register({ username: '', password: '' }))
-        .rejects
-        .toThrowError(new BadRequestException('Username and password are required'));
+      await expect(
+        controller.register({ username: '', password: '' }),
+      ).rejects.toThrowError(
+        new BadRequestException('Username and password are required'),
+      );
 
-      await expect(controller.register({ username: 'test', password: '' }))
-        .rejects
-        .toThrowError(new BadRequestException('Username and password are required'));
+      await expect(
+        controller.register({ username: 'test', password: '' }),
+      ).rejects.toThrowError(
+        new BadRequestException('Username and password are required'),
+      );
 
-      await expect(controller.register({ username: '', password: 'password' }))
-        .rejects
-        .toThrowError(new BadRequestException('Username and password are required'));
+      await expect(
+        controller.register({ username: '', password: 'password' }),
+      ).rejects.toThrowError(
+        new BadRequestException('Username and password are required'),
+      );
     });
 
     it('should call AuthService.register and return a success message', async () => {
@@ -80,9 +85,11 @@ describe('AuthController', () => {
 
       authServiceMock.login.mockResolvedValue(null); // Simulating failed login (invalid credentials)
 
-      await expect(controller.login({ username, password }))
-        .rejects
-        .toThrowError(new BadRequestException('Invalid username or password'));
+      await expect(
+        controller.login({ username, password }),
+      ).rejects.toThrowError(
+        new BadRequestException('Invalid username or password'),
+      );
     });
 
     it('should call AuthService.login and return a token', async () => {

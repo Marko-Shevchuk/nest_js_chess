@@ -11,11 +11,13 @@ export class AppController {
 
   @Get('history')
   serveHistoryWithoutId(@Res() res: Response) {
-    res.status(400).send('No game ID provided. Use /history/:id to view a specific game.');
+    res
+      .status(400)
+      .send('No game ID provided. Use /history/:id to view a specific game.');
   }
 
   @Get('history/:id')
-  serveHistoryWithId(@Res() res: Response, @Param('id') id: string) {
+  serveHistoryWithId(@Res() res: Response) {
     res.sendFile(join(__dirname, '..', 'html', 'history.html'));
   }
 

@@ -37,7 +37,7 @@ describe('AppController', () => {
       appController.serveHistoryWithoutId(res);
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.send).toHaveBeenCalledWith(
-        'No game ID provided. Use /history/:id to view a specific game.'
+        'No game ID provided. Use /history/:id to view a specific game.',
       );
     });
   });
